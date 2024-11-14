@@ -18,6 +18,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { createAccount } from "@/lib/actions/users.action";
+import OTPModal from "@/components/OTPModal";
 type FormType = "sign-in" | "sign-up";
 
 const authFormSchema = (formType: FormType) => {
@@ -50,6 +51,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
+
     setIsLoading(true);
     setErrorMessage("");
     try {
@@ -156,6 +158,10 @@ const AuthForm = ({ type }: { type: FormType }) => {
       </Form>
 
       {/*    OTP VERIFICATION */}
+
+      {accountId && (
+        <OTPModal email={form.getValues("email")} accountId={accountId} />
+      )}
     </>
   );
 };
