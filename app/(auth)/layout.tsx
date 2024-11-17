@@ -1,6 +1,5 @@
 import React from "react";
 import Image from "next/image";
-import { IM_Fell_Great_Primer } from "next/dist/compiled/@next/font/dist/google";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   return (

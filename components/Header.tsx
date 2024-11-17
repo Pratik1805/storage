@@ -1,0 +1,34 @@
+import React from "react";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import Search from "@/components/search";
+import FileUploader from "@/components/FileUploader";
+import { sigOutUser } from "@/lib/actions/users.action";
+
+const Header = () => {
+  return (
+    <header className={"header"}>
+      <Search />
+      <div className={"header-wrapper"}>
+        <FileUploader />
+        <form
+          action={async () => {
+            "use server"; // new React-19 functionality
+            await sigOutUser();
+          }}
+        >
+          <Button type={"submit"} className="sign-out-button">
+            <Image
+              src={"/assets/icons/logout.svg"}
+              alt={"sign-out"}
+              width={24}
+              height={24}
+              className={"w-6"}
+            />
+          </Button>
+        </form>
+      </div>
+    </header>
+  );
+};
+export default Header;
