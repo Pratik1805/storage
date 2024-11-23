@@ -5,12 +5,18 @@ import Search from "@/components/search";
 import FileUploader from "@/components/FileUploader";
 import { sigOutUser } from "@/lib/actions/users.action";
 
-const Header = () => {
+const Header = ({
+  userId,
+  accountId,
+}: {
+  userId: string;
+  accountId: string;
+}) => {
   return (
     <header className={"header"}>
       <Search />
       <div className={"header-wrapper"}>
-        <FileUploader />
+        <FileUploader ownerId={userId} accountId={accountId} />
         <form
           action={async () => {
             "use server"; // new React-19 functionality

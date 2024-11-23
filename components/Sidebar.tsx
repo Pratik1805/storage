@@ -10,10 +10,7 @@ interface Props {
   email: string;
   avatar: string;
 }
-const Sidebar = (
-  { fullName, email, avatar }: Props,
-  // { avatar }: { avatar: string },
-) => {
+const Sidebar = ({ fullName, email, avatar }: Props) => {
   const pathname = usePathname();
 
   return (

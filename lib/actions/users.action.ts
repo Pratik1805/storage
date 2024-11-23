@@ -108,20 +108,23 @@ export const verifySecret = async ({
 };
 
 export const getCurrentUser = async () => {
-  const { databases, account } = await createSessionClient();
+  try {
+    const { databases, account } = await createSessionClient();
 
-  const result = await account.get();
+    const result = await account.get();
 
-  const user = await databases.listDocuments(
-    appwriteConfig.databaseId,
-    appwriteConfig.usersCollectionId,
-    [Query.equal("accountId", result.$id)],
-  );
+    const user = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.usersCollectionId,
+      [Query.equal("accountId", result.$id)],
+    );
 
-  if (user.total === 0) {
-    return null;
+    if (user.total <= 0) return null;
+
+    return parseStringify(user.documents[0]);
+  } catch (error) {
+    console.log(error);
   }
-  return parseStringify(user.documents[0]);
 };
 
 export const sigOutUser = async () => {
@@ -148,7 +151,10 @@ export const sigInUser = async ({ email }: { email: string }) => {
     return parseStringify({ accountId: null, error: "User not found" });
   } catch (error) {
     handleError(error, "Failed to sign In");
-  } finally {
-    redirect("/sign-up");
   }
 };
+
+// export const getAvatars = async ({ fullName }: { fullName: string }) => {
+//   const { avatars } = await createSessionClient();
+//   return avatars.getInitials(fullName, 44, 44);
+// };
