@@ -51,6 +51,15 @@ const FileUploader = ({ ownerId, accountId, className }: Props) => {
                 prevFiles.filter((f) => f.name !== file.name),
               );
             }
+            toast({
+              description: (
+                <p className={"body-2 text-white"}>
+                  <span className={"font-semibold"}>{file.name}</span> is
+                  successfully uploaded
+                </p>
+              ),
+              className: "error-toast",
+            });
           },
         );
       });
