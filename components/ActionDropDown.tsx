@@ -23,12 +23,22 @@ import { actionsDropdownItems } from "@/constants";
 import { constructDownloadUrl } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { renameFile, updateFileUsers } from "@/lib/actions/file.actions";
+import {
+  deleteFile,
+  renameFile,
+  updateFileUsers,
+} from "@/lib/actions/file.actions";
 import { usePathname } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { FileDetails, ShareInput } from "@/components/ActionModalContent";
 
-const ActionDropDown = ({ file }: { file: Models.Document }) => {
+const ActionDropDown = ({
+  file,
+  currentUser,
+}: {
+  file: Models.Document;
+  currentUser: Models.Document;
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [action, setAction] = useState<ActionType | null>(null);
@@ -55,10 +65,16 @@ const ActionDropDown = ({ file }: { file: Models.Document }) => {
     const actions = {
       rename: () =>
         renameFile({ fileId: file.$id, name, extension: file.extension, path }),
+
       share: () => updateFileUsers({ fileId: file.$id, emails, path }),
-      delete: () => {
-        console.log("delete");
-      },
+
+      delete: () =>
+        deleteFile({
+          fileId: file.$id,
+          bucketFileId: file.bucketFileId,
+          path,
+        }), // path is passed to revalidate cache for that path
+      // so that updated information is displayed accordingly
     };
 
     success = await actions[action.value as keyof typeof actions](); // action.value as keyof typeof actions => key value  will we of type actions
@@ -78,17 +94,6 @@ const ActionDropDown = ({ file }: { file: Models.Document }) => {
   };
 
   const handleRemoveUser = async (email: string) => {
-    if (!email || email !== file.owner.email) {
-      toast({
-        description: (
-          <p className={"body-2 text-white"}>
-            Cannot perform this action as you don&#39;t have privileges
-          </p>
-        ),
-        className: "error-toast",
-      });
-      return;
-    }
     const updatedEmails = emails.filter((e) => e !== email);
     const success = await updateFileUsers({
       fileId: file.$id,
@@ -126,12 +131,20 @@ const ActionDropDown = ({ file }: { file: Models.Document }) => {
               onRemove={handleRemoveUser}
             />
           )}
+
+          {value === "delete" && (
+            <p className={"delete-confirmation"}>
+              Are you sure you want to delete{" "}
+              <span className={"delete-file-name"}>{file.name}</span>?
+            </p>
+          )}
         </DialogHeader>
         {["rename", "delete", "share"].includes(value) && (
           <DialogFooter className={"flex flex-col gap-3 md:flex-row"}>
             <Button onClick={closeAllModals} className={"modal-cancel-button"}>
               Cancel
             </Button>
+
             <Button onClick={handleAction} className={"modal-submit-button"}>
               <p className={"capitalize"}>{value}</p>
               {isLoading && (
@@ -166,49 +179,55 @@ const ActionDropDown = ({ file }: { file: Models.Document }) => {
             {file.name}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {actionsDropdownItems.map((actionItem) => (
-            <DropdownMenuItem
-              key={actionItem.value}
-              className={"shad-dropdown-item"}
-              onClick={() => {
-                setAction(actionItem);
+          {actionsDropdownItems
+            .filter(
+              (actionItem) =>
+                actionItem.value !== "delete" ||
+                file.owner.email === currentUser.email,
+            )
+            .map((actionItem) => (
+              <DropdownMenuItem
+                key={actionItem.value}
+                className={"shad-dropdown-item"}
+                onClick={() => {
+                  setAction(actionItem);
 
-                if (
-                  ["rename", "share", "delete", "details"].includes(
-                    actionItem.value,
-                  )
-                ) {
-                  setIsModalOpen(true);
-                }
-              }}
-            >
-              {actionItem.value === "download" ? (
-                <Link
-                  href={constructDownloadUrl(file.bucketFileId)}
-                  download={file.name}
-                  className="flex items-center gap-2"
-                >
-                  <Image
-                    src={actionItem.icon}
-                    alt={actionItem.label}
-                    width={30}
-                    height={30}
-                  />
-                  {actionItem.label}
-                </Link>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Image
-                    src={actionItem.icon}
-                    alt={actionItem.label}
-                    width={30}
-                    height={30}
-                  />
-                  {actionItem.label}
-                </div>
-              )}
-            </DropdownMenuItem>
-          ))}
+                  if (
+                    ["rename", "share", "delete", "details"].includes(
+                      actionItem.value,
+                    )
+                  ) {
+                    setIsModalOpen(true);
+                  }
+                }}
+              >
+                {actionItem.value === "download" ? (
+                  <Link
+                    href={constructDownloadUrl(file.bucketFileId)}
+                    download={file.name}
+                    className="flex items-center gap-2"
+                  >
+                    <Image
+                      src={actionItem.icon}
+                      alt={actionItem.label}
+                      width={30}
+                      height={30}
+                    />
+                    {actionItem.label}
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Image
+                      src={actionItem.icon}
+                      alt={actionItem.label}
+                      width={30}
+                      height={30}
+                    />
+                    {actionItem.label}
+                  </div>
+                )}
+              </DropdownMenuItem>
+            ))}
         </DropdownMenuContent>
       </DropdownMenu>
 
