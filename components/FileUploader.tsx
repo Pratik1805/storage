@@ -58,7 +58,7 @@ const FileUploader = ({ ownerId, accountId, className }: Props) => {
                   successfully uploaded
                 </p>
               ),
-              className: "error-toast",
+              className: "success-toast",
             });
           },
         );

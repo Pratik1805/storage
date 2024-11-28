@@ -2,11 +2,9 @@
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 import {
@@ -17,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Models } from "node-appwrite";
@@ -25,6 +23,10 @@ import { actionsDropdownItems } from "@/constants";
 import { constructDownloadUrl } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { renameFile, updateFileUsers } from "@/lib/actions/file.actions";
+import { usePathname } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { FileDetails, ShareInput } from "@/components/ActionModalContent";
 
 const ActionDropDown = ({ file }: { file: Models.Document }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,6 +34,10 @@ const ActionDropDown = ({ file }: { file: Models.Document }) => {
   const [action, setAction] = useState<ActionType | null>(null);
   const [name, setName] = useState(file.name);
   const [isLoading, setIsLoading] = useState(false);
+  const [emails, setEmails] = useState<string[]>([]);
+
+  const path = usePathname();
+  const { toast } = useToast();
 
   const closeAllModals = () => {
     setIsModalOpen(false);
@@ -41,8 +47,57 @@ const ActionDropDown = ({ file }: { file: Models.Document }) => {
     // setEmails([]);
   };
 
-  const handleAction = async () => {};
+  const handleAction = async () => {
+    if (!action) return;
+    setIsLoading(true);
+    let success = false;
 
+    const actions = {
+      rename: () =>
+        renameFile({ fileId: file.$id, name, extension: file.extension, path }),
+      share: () => updateFileUsers({ fileId: file.$id, emails, path }),
+      delete: () => {
+        console.log("delete");
+      },
+    };
+
+    success = await actions[action.value as keyof typeof actions](); // action.value as keyof typeof actions => key value  will we of type actions
+
+    if (success) {
+      closeAllModals();
+      toast({
+        description: (
+          <p className={"body-2 text-white"}>
+            {action.label} successfully done
+          </p>
+        ),
+        className: "success-toast",
+      });
+    }
+    setIsLoading(false);
+  };
+
+  const handleRemoveUser = async (email: string) => {
+    if (!email || email !== file.owner.email) {
+      toast({
+        description: (
+          <p className={"body-2 text-white"}>
+            Cannot perform this action as you don&#39;t have privileges
+          </p>
+        ),
+        className: "error-toast",
+      });
+      return;
+    }
+    const updatedEmails = emails.filter((e) => e !== email);
+    const success = await updateFileUsers({
+      fileId: file.$id,
+      emails: updatedEmails,
+      path,
+    });
+
+    if (success) setEmails(updatedEmails);
+  };
   const renderDialogContent = () => {
     if (!action) return null;
 
@@ -59,6 +114,16 @@ const ActionDropDown = ({ file }: { file: Models.Document }) => {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+            />
+          )}
+
+          {value === "details" && <FileDetails file={file} />}
+
+          {value === "share" && (
+            <ShareInput
+              file={file}
+              onInputChange={setEmails}
+              onRemove={handleRemoveUser}
             />
           )}
         </DialogHeader>
