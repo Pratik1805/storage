@@ -1,9 +1,9 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import Search from "@/components/search";
 import FileUploader from "@/components/FileUploader";
 import { sigOutUser } from "@/lib/actions/users.action";
+import Search from "@/components/Search";
 
 const Header = ({
   userId,
