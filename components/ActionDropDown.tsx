@@ -34,10 +34,10 @@ import { FileDetails, ShareInput } from "@/components/ActionModalContent";
 
 const ActionDropDown = ({
   file,
-  currentUser,
+  currentUserEmail,
 }: {
   file: Models.Document;
-  currentUser: Models.Document;
+  currentUserEmail: string;
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -129,6 +129,7 @@ const ActionDropDown = ({
               file={file}
               onInputChange={setEmails}
               onRemove={handleRemoveUser}
+              currentUserEmail={currentUserEmail}
             />
           )}
 
@@ -182,8 +183,10 @@ const ActionDropDown = ({
           {actionsDropdownItems
             .filter(
               (actionItem) =>
-                actionItem.value !== "delete" ||
-                file.owner.email === currentUser.email,
+                (actionItem.value !== "delete" &&
+                  actionItem.value !== "rename") ||
+                file.owner.email === currentUserEmail,
+              // TODO: check if the currentUser has admin privileges
             )
             .map((actionItem) => (
               <DropdownMenuItem

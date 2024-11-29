@@ -1,3 +1,4 @@
+// TODO: check if the currentUser has admin privileges
 import React from "react";
 import { Models } from "node-appwrite";
 import Thumbnail from "@/components/Thumbnail";
@@ -45,8 +46,14 @@ interface Props {
   file: Models.Document;
   onInputChange: React.Dispatch<React.SetStateAction<string[]>>;
   onRemove: (email: string) => void;
+  currentUserEmail: string;
 }
-export const ShareInput = ({ file, onInputChange, onRemove }: Props) => {
+export const ShareInput = ({
+  file,
+  onInputChange,
+  onRemove,
+  currentUserEmail,
+}: Props) => {
   return (
     <>
       <ImageThumbnail file={file} />
@@ -77,7 +84,7 @@ export const ShareInput = ({ file, onInputChange, onRemove }: Props) => {
                 className={"flex items-center justify-between gap-2"}
               >
                 <p className={"subtitle-2"}>{email}</p>
-                {email === file.owner.email && (
+                {currentUserEmail === file.owner.email && (
                   <Button
                     onClick={() => onRemove(email)}
                     className={"share-remove-user"}

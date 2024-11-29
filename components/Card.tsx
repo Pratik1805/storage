@@ -8,10 +8,10 @@ import ActionDropDown from "@/components/ActionDropDown";
 
 const Card = ({
   file,
-  currentUser,
+  currentUserEmail,
 }: {
   file: Models.Document;
-  currentUser: Models.Document;
+  currentUserEmail: string;
 }) => {
   return (
     <Link href={file.url} target={"_blank"} className={"file-card"}>
@@ -24,7 +24,7 @@ const Card = ({
           imageClassName={"!size-11"}
         />
         <div className={"flex flex-col items-end justify-between"}>
-          <ActionDropDown file={file} currentUser={currentUser} />
+          <ActionDropDown file={file} currentUserEmail={currentUserEmail} />
           <p className={"body-1"}>{convertFileSize(file.size)}</p>
         </div>
       </div>
