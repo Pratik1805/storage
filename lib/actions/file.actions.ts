@@ -72,6 +72,7 @@ const createQueries = (
     Query.or([
       Query.equal("owner", [currentUser.$id]),
       Query.contains("users", [currentUser.email]),
+      Query.contains("AdminUsers", [currentUser.email]),
     ]),
   ];
 
@@ -146,7 +147,8 @@ export const renameFile = async ({
 
 export const updateFileUsers = async ({
   fileId,
-  emails,
+  userEmails,
+  adminEmails,
   path,
 }: UpdateFileUsersProps) => {
   const { databases } = await createAdminClient();
@@ -157,7 +159,8 @@ export const updateFileUsers = async ({
       appwriteConfig.filesCollectionId,
       fileId,
       {
-        users: emails,
+        AdminUsers: adminEmails,
+        users: userEmails,
       },
     );
 
@@ -167,6 +170,54 @@ export const updateFileUsers = async ({
     handleError(error, "Failed to rename file");
   }
 };
+
+// export const updateFileUsers = async ({
+//   fileId,
+//   userEmails = [],
+//   adminEmails = [],
+//   path,
+// }: UpdateFileUsersProps & { isAdding?: boolean }) => {
+//   const { databases } = await createAdminClient();
+//
+//   try {
+//     // Step 1: Fetch the current file document
+//     const currentFile = await databases.getDocument(
+//       appwriteConfig.databaseId,
+//       appwriteConfig.filesCollectionId,
+//       fileId,
+//     );
+//
+//     // Step 2: Get current arrays from the database
+//     const currentUsers = currentFile.users || [];
+//     const currentAdminUsers = currentFile.AdminUsers || [];
+//
+//     // Step 3: Update arrays based on the operation (add or remove)
+//     const updatedUsers = Array.from(new Set([...currentUsers, ...userEmails])); // Add without duplicate
+//
+//     const updatedAdminUsers = Array.from(
+//       new Set([...currentAdminUsers, ...adminEmails]),
+//     ); // Add without duplicates
+//
+//     // Step 4: Update the file document
+//     const updatedFile = await databases.updateDocument(
+//       appwriteConfig.databaseId,
+//       appwriteConfig.filesCollectionId,
+//       fileId,
+//       {
+//         users: updatedUsers,
+//         AdminUsers: updatedAdminUsers,
+//       },
+//     );
+//
+//     // Step 5: Revalidate the cache
+//     revalidatePath(path);
+//
+//     // Step 6: Return the updated document
+//     return parseStringify(updatedFile);
+//   } catch (error) {
+//     handleError(error, "Failed to update file users");
+//   }
+// };
 
 export const deleteFile = async ({
   fileId,

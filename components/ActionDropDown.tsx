@@ -45,9 +45,11 @@ const ActionDropDown = ({
   const [name, setName] = useState(file.name);
   const [isLoading, setIsLoading] = useState(false);
   const [emails, setEmails] = useState<string[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const path = usePathname();
   const { toast } = useToast();
+  const { users: currentUsers, AdminUsers: currentAdminUsers } = file; // extracting user and admin emails
 
   const closeAllModals = () => {
     setIsModalOpen(false);
@@ -62,47 +64,82 @@ const ActionDropDown = ({
     setIsLoading(true);
     let success = false;
 
+    // Update the respective list based on admin status
+    const updatedUserEmails = isAdmin
+      ? currentUsers
+      : Array.from(new Set([...currentUsers, ...emails]));
+
+    const updatedAdminEmails = isAdmin
+      ? Array.from(new Set([...currentAdminUsers, ...emails]))
+      : currentAdminUsers;
+
     const actions = {
       rename: () =>
         renameFile({ fileId: file.$id, name, extension: file.extension, path }),
 
-      share: () => updateFileUsers({ fileId: file.$id, emails, path }),
+      share: () =>
+        updateFileUsers({
+          fileId: file.$id,
+          userEmails: updatedUserEmails,
+          adminEmails: updatedAdminEmails,
+          path,
+        }),
 
       delete: () =>
         deleteFile({
           fileId: file.$id,
           bucketFileId: file.bucketFileId,
           path,
-        }), // path is passed to revalidate cache for that path
-      // so that updated information is displayed accordingly
+        }),
     };
 
-    success = await actions[action.value as keyof typeof actions](); // action.value as keyof typeof actions => key value  will we of type actions
+    success = await actions[action.value as keyof typeof actions]();
 
     if (success) {
       closeAllModals();
       toast({
         description: (
-          <p className={"body-2 text-white"}>
-            {action.label} successfully done
-          </p>
+          <p className="body-2 text-white">{`${action.label} successfully done`}</p>
         ),
         className: "success-toast",
       });
     }
+    setIsAdmin(false);
     setIsLoading(false);
   };
 
   const handleRemoveUser = async (email: string) => {
-    const updatedEmails = emails.filter((e) => e !== email);
-    const success = await updateFileUsers({
-      fileId: file.$id,
-      emails: updatedEmails,
-      path,
-    });
+    try {
+      // Extract current user and admin email lists
 
-    if (success) setEmails(updatedEmails);
+      // Determine the updated user and admin email lists
+      const updatedAdminEmails = currentAdminUsers.includes(email)
+        ? currentAdminUsers.filter((e: string) => e !== email)
+        : currentAdminUsers;
+
+      const updatedUserEmails = currentUsers.includes(email)
+        ? currentUsers.filter((e: string) => e !== email)
+        : currentUsers;
+
+      // Update the file's user information
+      const isUpdated = await updateFileUsers({
+        fileId: file.$id,
+        userEmails: updatedUserEmails,
+        adminEmails: updatedAdminEmails,
+        path,
+      });
+
+      // Update the local state if the update was successful
+      if (isUpdated) {
+        setEmails((prevEmails) => prevEmails.filter((e) => e !== email));
+        // closeAllModals(); Uncomment if modal handling is needed
+      }
+    } catch (error) {
+      console.error("Failed to remove user:", error);
+      // Add any user-facing error handling or reporting logic here
+    }
   };
+
   const renderDialogContent = () => {
     if (!action) return null;
 
@@ -130,6 +167,7 @@ const ActionDropDown = ({
               onInputChange={setEmails}
               onRemove={handleRemoveUser}
               currentUserEmail={currentUserEmail}
+              setIsAdmin={setIsAdmin}
             />
           )}
 
@@ -185,7 +223,8 @@ const ActionDropDown = ({
               (actionItem) =>
                 (actionItem.value !== "delete" &&
                   actionItem.value !== "rename") ||
-                file.owner.email === currentUserEmail,
+                file.owner.email === currentUserEmail ||
+                currentAdminUsers.includes(currentUserEmail),
               // TODO: check if the currentUser has admin privileges
             )
             .map((actionItem) => (
